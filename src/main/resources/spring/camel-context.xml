@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:camel="http://camel.apache.org/schema/spring"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <bean class="org.mycompany.ResultadoSorteio" id="resultado" scope="singleton"/>
+    <bean class="org.mycompany.ErrorSorteio" id="errorsorteio" scope="singleton"/>
+    <bean class="org.mycompany.Sorteio" id="sorteio" scope="singleton"/>
+    <!-- Define a traditional camel context here -->
+    <bean
+        class="org.apache.camel.processor.idempotent.MemoryIdempotentRepository" id="repo"/>
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <restConfiguration component="servlet" port="8080"/>
+        <rest path="/sorteio">
+            <post uri="/">
+                <to uri="direct:sorteio"/>
+            </post>
+        </rest>
+        <route id="sorteio-numero">
+            <from id="route-timer" uri="direct:sorteio"/>
+            <choice id="_choice1">
+                <when id="_when1">
+                    <simple>${body} == null</simple>
+                    <to id="_to2" uri="errorsorteio"/>
+                </when>
+                <otherwise id="_otherwise1">
+                    <to id="_to4" uri="sorteio"/>
+                    <idempotentConsumer id="ic"
+                        messageIdRepositoryRef="repo" skipDuplicate="false">
+                        <simple>${body}</simple>
+                        <choice id="_choice2">
+                            <when id="_when2">
+                                <simple>${exchangeProperty.CamelDuplicateMessage} == true</simple>
+                                <log id="repetido" message="numero já sorteado"/>
+                                <setBody id="body repetido">
+                                    <simple>${body} já sorteado</simple>
+                                </setBody>
+                            </when>
+                            <otherwise id="_otherwise2">
+                                <log id="sorteado" message="numero sorteado >>> ${body}"/>
+                            </otherwise>
+                        </choice>
+                    </idempotentConsumer>
+                </otherwise>
+            </choice>
+        </route>
+    </camelContext>
+</beans>
