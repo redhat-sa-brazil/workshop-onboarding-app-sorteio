@@ -33,6 +33,5 @@
                 </otherwise>
             </choice>
         </route>
-        <route id="Q&amp;A"/>
     </camelContext>
 </beans>
