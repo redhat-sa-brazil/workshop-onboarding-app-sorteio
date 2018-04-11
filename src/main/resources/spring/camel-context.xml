@@ -15,8 +15,11 @@
                 <to uri="direct:sorteio"/>
             </post>
         </rest>
-        <route id="sorteio-numero">
+        <route id="sorteio-api">
             <from id="route-timer" uri="direct:sorteio"/>
+            <unmarshal id="_unmarshal1">
+                <json library="Jackson" unmarshalTypeName="org.mycompany.ListaAlunos"/>
+            </unmarshal>
             <choice id="_choice1">
                 <when id="_when1">
                     <simple>${body} == null</simple>
@@ -24,24 +27,12 @@
                 </when>
                 <otherwise id="_otherwise1">
                     <to id="_to4" uri="sorteio"/>
-                    <idempotentConsumer id="ic"
-                        messageIdRepositoryRef="repo" skipDuplicate="false">
-                        <simple>${body}</simple>
-                        <choice id="_choice2">
-                            <when id="_when2">
-                                <simple>${exchangeProperty.CamelDuplicateMessage} == true</simple>
-                                <log id="repetido" message="numero já sorteado"/>
-                                <setBody id="body repetido">
-                                    <simple>${body} já sorteado</simple>
-                                </setBody>
-                            </when>
-                            <otherwise id="_otherwise2">
-                                <log id="sorteado" message="numero sorteado >>> ${body}"/>
-                            </otherwise>
-                        </choice>
-                    </idempotentConsumer>
+                    <marshal id="_marshal1">
+                        <json library="Jackson" unmarshalTypeName="org.mycompany.ListaAlunos"/>
+                    </marshal>
                 </otherwise>
             </choice>
         </route>
+        <route id="Q&amp;A"/>
     </camelContext>
 </beans>
